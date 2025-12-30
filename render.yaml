@@ -1,0 +1,38 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: beyondchats-backend
+    env: node
+    region: oregon  # Change to your preferred region
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false  # Set this manually in Render dashboard
+      - key: CORS_ORIGIN
+        sync: false  # Set this after frontend is deployed
+      - key: SERPAPI_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: API_BASE_URL
+        sync: false  # Will be set automatically after deployment
+
+  # Frontend Static Site
+  - type: static
+    name: beyondchats-frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    rootDir: frontend
+    envVars:
+      - key: VITE_NODE_API_URL
+        sync: false  # Set this to your backend URL after deployment
+

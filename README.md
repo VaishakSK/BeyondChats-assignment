@@ -181,15 +181,32 @@ npm install
 
 ### Configuration
 
-**For Development (Current Setup)**:
-- API keys are hardcoded in services for convenience
-- MongoDB connection string is in `backend/server.js`
-- No `.env` file required for basic setup
+**Environment Variables Required**:
 
-**For Production**:
-- Create `.env` files using `.env.example` templates
-- Move all API keys and credentials to `.env` files
-- Never commit `.env` files to version control
+1. **Backend** (`backend/.env`):
+   ```env
+   PORT=5000
+   CORS_ORIGIN=http://localhost:5173
+   MONGODB_URI=your_mongodb_connection_string
+   ```
+
+2. **Task 3** (`task3/.env`):
+   ```env
+   API_BASE_URL=http://localhost:5000/api
+   SERPAPI_KEY=your_serpapi_key
+   GEMINI_API_KEY=your_gemini_api_key
+   GEMINI_MODEL=gemini-2.5-flash
+   ```
+
+**Setup Steps**:
+1. Copy `.env.example` files to `.env` in each directory (`backend/`, `task3/`)
+2. Fill in your actual API keys and MongoDB connection string
+3. Never commit `.env` files to version control (they're in `.gitignore`)
+
+**Getting API Keys**:
+- **SerpAPI**: Get your key from https://serpapi.com/
+- **Gemini API**: Get your key from https://makersuite.google.com/app/apikey
+- **MongoDB**: Get connection string from MongoDB Atlas or use local MongoDB
 
 ### Running the Application
 
