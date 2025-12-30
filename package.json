@@ -4,15 +4,14 @@
   "description": "BeyondChats Article Management System",
   "private": true,
   "scripts": {
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../task3 && npm install",
-    "install:backend": "cd backend && npm install",
-    "install:frontend": "cd frontend && npm install",
-    "install:task3": "cd task3 && npm install",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "build:frontend": "cd frontend && npm run build",
-    "start:backend": "cd backend && npm start",
-    "postinstall": "npm run install:all"
+    "install:all": "npm install",
+    "install:backend": "npm install --workspace=backend",
+    "install:frontend": "npm install --workspace=frontend",
+    "install:task3": "npm install --workspace=task3",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "start:backend": "npm start --workspace=backend"
   },
   "workspaces": [
     "backend",
