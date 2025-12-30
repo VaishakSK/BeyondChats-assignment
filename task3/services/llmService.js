@@ -9,7 +9,7 @@ export class LLMService {
   constructor() {
     // Use environment variables (set in .env file)
     // Fallback to hardcoded key for development convenience
-    this.geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || 'AIzaSyArT4Pd6XivvgrR3pREi1CYSyfOl55vAQI';
+    this.geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || 'AIzaSyD6XRvNTFskOck-foWTmF3R-VzFQerMP8g';
     // Use gemini-2.5-flash (latest and fastest)
     this.geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   }

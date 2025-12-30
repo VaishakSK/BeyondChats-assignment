@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ArticleCard from './ArticleCard';
+import Pagination from './Pagination';
 import './ArticleList.css';
 
 const ArticleList = ({ 
@@ -12,7 +13,10 @@ const ArticleList = ({
   onEnhance,
   showActions = false,
   onArticleClick,
-  enhancing = {}
+  enhancing = {},
+  isEnhancementActive = false,
+  pagination = null,
+  onPageChange = null
 }) => {
   if (loading) {
     return (
@@ -54,21 +58,33 @@ const ArticleList = ({
   }
 
   return (
-    <div className="article-list">
-      {articles.map((article) => (
-        <ArticleCard
-          key={article._id || article.id}
-          article={article}
-          onViewVersions={onViewVersions}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onEnhance={onEnhance}
-          showActions={showActions}
-          onClick={onArticleClick}
-          isEnhancing={enhancing[article._id || article.id] || false}
+    <>
+      <div className="article-list">
+        {articles.map((article) => (
+          <ArticleCard
+            key={article._id || article.id}
+            article={article}
+            onViewVersions={onViewVersions}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onEnhance={onEnhance}
+            showActions={showActions}
+            onClick={onArticleClick}
+            isEnhancing={enhancing[article._id || article.id] || false}
+            isEnhancementActive={isEnhancementActive}
+          />
+        ))}
+      </div>
+      {pagination && onPageChange && (
+        <Pagination
+          currentPage={pagination.current_page || pagination.page || 1}
+          lastPage={pagination.last_page || pagination.pages || 1}
+          total={pagination.total || 0}
+          perPage={pagination.per_page || pagination.limit || 10}
+          onPageChange={onPageChange}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 };
 

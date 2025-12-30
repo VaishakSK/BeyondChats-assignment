@@ -156,6 +156,18 @@
   padding: 32px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   min-height: 400px;
+  margin-right: 0;
+  transition: margin-right 0.3s ease;
+}
+
+.content-area.with-enhancement-panel {
+  margin-right: 400px;
+}
+
+@media (max-width: 768px) {
+  .content-area.with-enhancement-panel {
+    margin-right: 0;
+  }
 }
 
 @media (max-width: 768px) {

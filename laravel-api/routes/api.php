@@ -9,6 +9,7 @@ Route::middleware('api')->group(function () {
     Route::get('/articles/{id}', [ArticleController::class, 'show']);
     Route::get('/articles/{id}/versions', [ArticleController::class, 'versions']);
     Route::post('/articles', [ArticleController::class, 'store']);
+    Route::post('/articles/scrape', [ArticleController::class, 'scrape']);
     Route::put('/articles/{id}', [ArticleController::class, 'update']);
     Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
 });

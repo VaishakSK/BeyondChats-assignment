@@ -2,36 +2,50 @@ import { useState, useEffect } from 'react';
 import { laravelArticleService, nodeArticleService } from './services/apiService';
 import ArticleList from './components/ArticleList';
 import ArticleModal from './components/ArticleModal';
+import EnhancementPanel from './components/EnhancementPanel';
 import './App.css';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('phase2'); // Default to Phase 2 since Node.js backend is ready
+  const [activeTab, setActiveTab] = useState('phase2'); // Default to Phase 2 - Phase 1 (Laravel) is hidden
   const [laravelArticles, setLaravelArticles] = useState([]);
   const [nodeArticles, setNodeArticles] = useState([]);
   const [loading, setLoading] = useState({ phase1: false, phase2: false });
   const [error, setError] = useState({ phase1: null, phase2: null });
+  const [laravelPagination, setLaravelPagination] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
+  const [currentLaravelPage, setCurrentLaravelPage] = useState(1);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [articleVersions, setArticleVersions] = useState(null);
   const [scraping, setScraping] = useState(false);
   const [enhancing, setEnhancing] = useState({});
+  const [enhancementActive, setEnhancementActive] = useState(false);
+  const [currentEnhancingArticle, setCurrentEnhancingArticle] = useState(null);
+  const [enhancementSteps, setEnhancementSteps] = useState([]);
+  const [enhancementProgressInterval, setEnhancementProgressInterval] = useState(null);
 
-  // Fetch Laravel articles (Phase 1)
-  const fetchLaravelArticles = async () => {
+  // Fetch Laravel articles (Phase 1) with pagination
+  const fetchLaravelArticles = async (page = currentLaravelPage) => {
     setLoading(prev => ({ ...prev, phase1: true }));
     setError(prev => ({ ...prev, phase1: null }));
     try {
-      const data = await laravelArticleService.getAllArticles();
-      // Handle different response structures
-      setLaravelArticles(Array.isArray(data) ? data : (data.data || []));
+      const response = await laravelArticleService.getAllArticles(page, 10);
+      // Handle Laravel pagination response
+      if (response.data && response.pagination) {
+        setLaravelArticles(response.data);
+        setLaravelPagination(response.pagination);
+        setCurrentLaravelPage(page);
+      } else {
+        // Fallback for non-paginated response
+        setLaravelArticles(Array.isArray(response) ? response : (response.data || []));
+      }
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'Failed to fetch articles from Laravel API. Make sure Laravel API is running on http://localhost:8000';
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to fetch articles. Make sure the backend server is running on http://localhost:5000';
       setError(prev => ({ ...prev, phase1: errorMessage }));
-      console.error('Laravel API Error:', err);
+      console.error('API Error:', err);
       // Show helpful message for connection errors
       if (err.code === 'ERR_NETWORK' || err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
         setError(prev => ({ 
           ...prev, 
-          phase1: 'Laravel API is not running on http://localhost:8000. Please start your Laravel server or switch to Phase 2 tab to use the Node.js API.' 
+          phase1: 'Backend server is not running. Please start the Node.js backend server on http://localhost:5000. Run: cd backend && npm run dev' 
         }));
       }
     } finally {
@@ -87,7 +101,27 @@ function App() {
     // Try to fetch versions if it's a Node.js article
     if (activeTab === 'phase2' && article._id) {
       try {
-        const response = await nodeArticleService.getArticleWithVersions(article._id);
+        // Try fetching versions with retry mechanism in case enhanced article is still being saved
+        let response;
+        let retries = 3;
+        let delay = 200; // Start with 200ms delay
+        
+        for (let attempt = 0; attempt < retries; attempt++) {
+          try {
+            response = await nodeArticleService.getArticleWithVersions(article._id);
+            // If we got a response (even without enhanced version), use it
+            break;
+          } catch (err) {
+            // If it's the last attempt, throw the error
+            if (attempt === retries - 1) {
+              throw err;
+            }
+            // Wait before retrying (enhanced article might still be saving to database)
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 1.5; // Exponential backoff: 200ms, 300ms, 450ms
+          }
+        }
+        
         // Transform response to match modal expectations
         setArticleVersions({
           original: response.data.original,
@@ -122,34 +156,189 @@ function App() {
 
   // Enhance article using Task 3
   const handleEnhance = async (articleId) => {
+    // Prevent multiple enhancements
+    if (enhancementActive) {
+      alert('Another article is currently being enhanced. Please wait for it to complete.');
+      return;
+    }
+
     if (!window.confirm('This will enhance the article using Google Search and AI. This may take 1-2 minutes. Continue?')) {
       return;
     }
+
+    // Find the article being enhanced
+    const article = nodeArticles.find(a => (a._id || a.id) === articleId);
     
+    // Initialize enhancement state
+    setEnhancementActive(true);
+    setCurrentEnhancingArticle(article);
     setEnhancing(prev => ({ ...prev, [articleId]: true }));
+    
+    // Initialize steps
+    const initialSteps = [
+      { title: 'Fetching article from API', status: 'pending', message: '', completedAt: null },
+      { title: 'Searching Google for similar articles', status: 'pending', message: '', completedAt: null },
+      { title: 'Scraping content from reference articles', status: 'pending', message: '', completedAt: null },
+      { title: 'Enhancing article using AI', status: 'pending', message: '', completedAt: null },
+      { title: 'Adding citations', status: 'pending', message: '', completedAt: null },
+      { title: 'Saving enhanced article', status: 'pending', message: '', completedAt: null }
+    ];
+    setEnhancementSteps(initialSteps);
+
     try {
-      const response = await nodeArticleService.enhanceArticle(articleId);
-      alert('Article enhancement started! It will be processed in the background. Please refresh in a few moments to see the enhanced version.');
-      // Refresh articles after a delay
-      setTimeout(() => {
-        fetchNodeArticles();
-      }, 5000);
+      // Start enhancement
+      await nodeArticleService.enhanceArticle(articleId);
+      
+      // Start polling for progress
+      const pollProgress = async () => {
+        try {
+          const progressResponse = await nodeArticleService.getEnhancementProgress(articleId);
+          
+          if (progressResponse.success && progressResponse.data) {
+            const progress = progressResponse.data;
+            
+            // Update steps with real progress
+            setEnhancementSteps(progress.steps || initialSteps);
+            
+            // Check if enhancement is completed
+            if (progress.status === 'completed') {
+              // Clear polling interval
+              if (enhancementProgressInterval) {
+                clearInterval(enhancementProgressInterval);
+                setEnhancementProgressInterval(null);
+              }
+              
+              // Reset enhancing state
+              setEnhancing(prev => {
+                const newState = { ...prev };
+                delete newState[articleId];
+                return newState;
+              });
+              
+              // Refresh articles immediately
+              fetchNodeArticles();
+              
+              // Also pre-fetch versions to make them available immediately
+              // Retry mechanism to ensure enhanced article is saved in database
+              const fetchVersionsWithRetry = async (retries = 5, delay = 500) => {
+                for (let i = 0; i < retries; i++) {
+                  try {
+                    const versionResponse = await nodeArticleService.getArticleWithVersions(articleId);
+                    if (versionResponse.data && versionResponse.data.hasEnhanced) {
+                      // Enhanced article is available, update the article in the list
+                      setNodeArticles(prev => {
+                        return prev.map(article => {
+                          if ((article._id || article.id) === articleId) {
+                            // Mark that this article has an enhanced version
+                            return { ...article, hasEnhanced: true };
+                          }
+                          return article;
+                        });
+                      });
+                      break; // Success, exit retry loop
+                    }
+                  } catch (err) {
+                    // If not found, wait and retry
+                    if (i < retries - 1) {
+                      await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                  }
+                }
+              };
+              
+              // Start fetching versions with retry (don't await, let it run in background)
+              fetchVersionsWithRetry();
+              
+              // Panel stays open - user must close manually
+            } else if (progress.status === 'error') {
+              // Clear polling interval on error
+              if (enhancementProgressInterval) {
+                clearInterval(enhancementProgressInterval);
+                setEnhancementProgressInterval(null);
+              }
+              
+              // Reset enhancing state
+              setEnhancing(prev => {
+                const newState = { ...prev };
+                delete newState[articleId];
+                return newState;
+              });
+              
+              // Don't show alert - error is shown in the panel
+            }
+          }
+        } catch (err) {
+          // If progress not found, it might have been cleaned up (completed)
+          // Check if we should stop polling
+          console.error('Error polling progress:', err);
+        }
+      };
+      
+      // Poll every 2 seconds
+      const progressInterval = setInterval(pollProgress, 2000);
+      setEnhancementProgressInterval(progressInterval);
+      
+      // Initial poll
+      pollProgress();
+      
     } catch (err) {
-      alert('Error enhancing article: ' + (err.message || 'Unknown error'));
-    } finally {
+      // Mark current step as error
+      setEnhancementSteps(prev => {
+        const newSteps = [...prev];
+        const currentStepIndex = newSteps.findIndex(s => s.status === 'in-progress' || s.status === 'pending');
+        if (currentStepIndex >= 0) {
+          newSteps[currentStepIndex] = { ...newSteps[currentStepIndex], status: 'error', message: err.message || 'Error occurred' };
+        }
+        return newSteps;
+      });
+      
+      alert('Error starting enhancement: ' + (err.message || 'Unknown error'));
       setEnhancing(prev => ({ ...prev, [articleId]: false }));
     }
   };
 
+  // Close enhancement panel
+  const handleCloseEnhancementPanel = () => {
+    // Check if enhancement is still in progress
+    const isInProgress = enhancementSteps.some(step => step.status === 'in-progress' || step.status === 'pending');
+    
+    if (isInProgress) {
+      if (!window.confirm('Enhancement is still in progress. Are you sure you want to close the panel? The enhancement will continue in the background.')) {
+        return;
+      }
+    }
+    
+    setEnhancementActive(false);
+    setCurrentEnhancingArticle(null);
+    setEnhancementSteps([]);
+    if (enhancementProgressInterval) {
+      clearInterval(enhancementProgressInterval);
+      setEnhancementProgressInterval(null);
+    }
+    
+    // Reset enhancing state for all articles
+    setEnhancing({});
+  };
+
   // Load articles when tab changes
   useEffect(() => {
-    if (activeTab === 'phase1') {
-      fetchLaravelArticles();
-    } else {
+    // Phase 1 (Laravel) is hidden - always load Phase 2 articles
+    // if (activeTab === 'phase1') {
+    //   fetchLaravelArticles(1);
+    // } else {
       fetchNodeArticles();
-    }
+    // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  // Cleanup enhancement interval on unmount
+  useEffect(() => {
+    return () => {
+      if (enhancementProgressInterval) {
+        clearInterval(enhancementProgressInterval);
+      }
+    };
+  }, [enhancementProgressInterval]);
 
   return (
     <div className="app">
@@ -164,10 +353,13 @@ function App() {
 
       <main className="app-main">
         <div className="container">
-          <div className="tabs">
+          {/* Tabs - Phase 1 (Laravel) is hidden, only showing Phase 2 */}
+          {/* Phase 1 tab hidden - code kept for future use */}
+          <div className="tabs" style={{ display: 'none' }}>
             <button
               className={`tab ${activeTab === 'phase1' ? 'active' : ''}`}
               onClick={() => setActiveTab('phase1')}
+              style={{ display: 'none' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -177,17 +369,57 @@ function App() {
               </svg>
               Phase 1: Laravel API
             </button>
-            <button
-              className={`tab ${activeTab === 'phase2' ? 'active' : ''}`}
-              onClick={() => setActiveTab('phase2')}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              Phase 2: Node.js API
-            </button>
           </div>
+
+          {/* Phase 1 action bar - hidden, code kept for future use */}
+          {activeTab === 'phase1' && false && (
+            <div className="action-bar">
+              <button
+                className="btn-scrape"
+                onClick={async () => {
+                  setScraping(true);
+                  try {
+                    await laravelArticleService.scrapeArticles();
+                    await fetchLaravelArticles(1);
+                    alert('Articles scraped successfully!');
+                  } catch (err) {
+                    alert('Error scraping articles: ' + (err.message || 'Unknown error'));
+                  } finally {
+                    setScraping(false);
+                  }
+                }}
+                disabled={scraping}
+              >
+                {scraping ? (
+                  <>
+                    <div className="spinner-small"></div>
+                    Scraping...
+                  </>
+                ) : (
+                  <>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Scrape All BeyondChats Articles
+                  </>
+                )}
+              </button>
+              <button
+                className="btn-refresh"
+                onClick={() => fetchLaravelArticles(currentLaravelPage)}
+                disabled={loading.phase1}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          )}
 
           {activeTab === 'phase2' && (
             <div className="action-bar">
@@ -227,8 +459,9 @@ function App() {
             </div>
           )}
 
-          <div className="content-area">
-            {activeTab === 'phase1' ? (
+          <div className={`content-area ${enhancementActive ? 'with-enhancement-panel' : ''}`}>
+            {/* Phase 1 content - hidden, code kept for future use */}
+            {activeTab === 'phase1' && false ? (
               <ArticleList
                 articles={laravelArticles}
                 loading={loading.phase1}
@@ -238,6 +471,8 @@ function App() {
                 onDelete={null}
                 showActions={false}
                 onArticleClick={handleViewArticle}
+                pagination={laravelPagination}
+                onPageChange={(page) => fetchLaravelArticles(page)}
               />
             ) : (
               <ArticleList
@@ -251,6 +486,7 @@ function App() {
                 showActions={true}
                 onArticleClick={handleViewArticle}
                 enhancing={enhancing}
+                isEnhancementActive={enhancementActive}
               />
             )}
           </div>
@@ -268,21 +504,30 @@ function App() {
         />
       )}
 
+      {/* Enhancement Panel */}
+      <EnhancementPanel
+        isActive={enhancementActive}
+        currentArticle={currentEnhancingArticle}
+        steps={enhancementSteps}
+        onClose={handleCloseEnhancementPanel}
+      />
+
       {/* Debug info - remove in production */}
       {process.env.NODE_ENV === 'development' && (
         <div style={{ 
           position: 'fixed', 
           bottom: '10px', 
-          right: '10px', 
+          right: enhancementActive ? '420px' : '10px',
           background: 'rgba(0,0,0,0.7)', 
           color: 'white', 
           padding: '10px', 
           borderRadius: '5px',
           fontSize: '12px',
-          zIndex: 9999
+          zIndex: 9999,
+          transition: 'right 0.3s ease'
         }}>
           <div>Phase: {activeTab}</div>
-          <div>Laravel Articles: {laravelArticles.length}</div>
+          {/* <div>Laravel Articles: {laravelArticles.length}</div> */}
           <div>Node Articles: {nodeArticles.length}</div>
         </div>
       )}

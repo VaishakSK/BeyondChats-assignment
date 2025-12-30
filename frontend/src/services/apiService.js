@@ -3,6 +3,7 @@ import axios from 'axios';
 // Base URLs
 // Phase 1 uses Node.js backend (no PHP/Laravel needed)
 // If you have Laravel running, set VITE_LARAVEL_API_URL=http://localhost:8000/api
+// By default, both phases use the Node.js API
 const LARAVEL_API_URL = import.meta.env.VITE_LARAVEL_API_URL || 'http://localhost:5000/api';
 const NODE_API_URL = import.meta.env.VITE_NODE_API_URL || 'http://localhost:5000/api';
 
@@ -14,16 +15,42 @@ const nodeApi = axios.create({
   },
 });
 
+// Create axios instance for Laravel API
+const laravelApi = axios.create({
+  baseURL: LARAVEL_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Laravel API Services (Phase 1)
-// Uses Node.js backend with Laravel-compatible response format
+// Note: By default, this uses Node.js API as fallback (no Laravel required)
 export const laravelArticleService = {
-  // Fetch all articles - uses Node.js backend
-  getAllArticles: async () => {
+  // Fetch all articles with pagination
+  getAllArticles: async (page = 1, perPage = 10) => {
     try {
-      const response = await nodeApi.get('/articles');
-      // Node.js returns { success: true, data: [...] }
-      // Laravel format expects direct array, so return data array
-      return response.data.data || response.data || [];
+      // Try Laravel API first if URL is set to port 8000, otherwise use Node.js API
+      if (LARAVEL_API_URL.includes('8000')) {
+        const response = await laravelApi.get('/articles', {
+          params: { page, per_page: perPage }
+        });
+        return response.data;
+      } else {
+        // Use Node.js API (default)
+        const response = await nodeApi.get('/articles', {
+          params: { page, limit: perPage }
+        });
+        // Transform Node.js response to match Laravel format
+        return {
+          data: response.data.data || response.data,
+          pagination: response.data.pagination || {
+            current_page: page,
+            per_page: perPage,
+            total: response.data.pagination?.total || (response.data.data || response.data).length,
+            last_page: response.data.pagination?.pages || 1
+          }
+        };
+      }
     } catch (error) {
       console.error('Error fetching articles:', error);
       throw error;
@@ -45,11 +72,33 @@ export const laravelArticleService = {
   // Fetch article versions (original and updates)
   getArticleVersions: async (id) => {
     try {
-      const response = await nodeApi.get(`/articles/${id}/versions`);
-      // Return versions data (Laravel format)
-      return response.data.data || response.data;
+      if (LARAVEL_API_URL.includes('8000')) {
+        const response = await laravelApi.get(`/articles/${id}/versions`);
+        return response.data;
+      } else {
+        // Use Node.js API
+        const response = await nodeApi.get(`/articles/${id}/versions`);
+        return response.data;
+      }
     } catch (error) {
       console.error('Error fetching article versions:', error);
+      throw error;
+    }
+  },
+
+  // Scrape articles from BeyondChats
+  scrapeArticles: async () => {
+    try {
+      if (LARAVEL_API_URL.includes('8000')) {
+        const response = await laravelApi.post('/articles/scrape');
+        return response.data;
+      } else {
+        // Use Node.js API scraping endpoint
+        const response = await nodeApi.post('/scrape/beyondchats');
+        return response.data;
+      }
+    } catch (error) {
+      console.error('Error scraping articles:', error);
       throw error;
     }
   },
@@ -143,6 +192,17 @@ export const nodeArticleService = {
       return response.data;
     } catch (error) {
       console.error('Error enhancing article:', error);
+      throw error;
+    }
+  },
+
+  // Get enhancement progress
+  getEnhancementProgress: async (articleId) => {
+    try {
+      const response = await nodeApi.get(`/enhance/${articleId}/progress`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching enhancement progress:', error);
       throw error;
     }
   },

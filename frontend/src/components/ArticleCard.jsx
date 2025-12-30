@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './ArticleCard.css';
 
-const ArticleCard = ({ article, onViewVersions, onEdit, onDelete, onEnhance, showActions = false, onClick, isEnhancing = false }) => {
+const ArticleCard = ({ article, onViewVersions, onEdit, onDelete, onEnhance, showActions = false, onClick, isEnhancing = false, isEnhancementActive = false }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const formatDate = (dateString) => {
@@ -69,7 +69,7 @@ const ArticleCard = ({ article, onViewVersions, onEdit, onDelete, onEnhance, sho
               <button 
                 className="btn btn-enhance"
                 onClick={() => onEnhance(article._id || article.id)}
-                disabled={isEnhancing}
+                disabled={isEnhancing || isEnhancementActive}
               >
                 {isEnhancing ? (
                   <>
