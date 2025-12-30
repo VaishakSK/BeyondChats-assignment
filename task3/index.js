@@ -1,11 +1,8 @@
-import dotenv from 'dotenv';
 import { GoogleSearchService } from './services/googleSearch.js';
 import { ArticleScraper } from './services/articleScraper.js';
 import { LLMService } from './services/llmService.js';
 import { APIService } from './services/apiService.js';
 import { CitationFormatter } from './utils/citationFormatter.js';
-
-dotenv.config();
 
 /**
  * Main function to enhance an article
