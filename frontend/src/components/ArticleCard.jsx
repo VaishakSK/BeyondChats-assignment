@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './ArticleCard.css';
 
-const ArticleCard = ({ article, onViewVersions, onEdit, onDelete, showActions = false, onClick }) => {
+const ArticleCard = ({ article, onViewVersions, onEdit, onDelete, onEnhance, showActions = false, onClick, isEnhancing = false }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const formatDate = (dateString) => {
@@ -65,6 +65,29 @@ const ArticleCard = ({ article, onViewVersions, onEdit, onDelete, showActions = 
 
         {showActions && (
           <div className="article-actions" onClick={(e) => e.stopPropagation()}>
+            {onEnhance && (
+              <button 
+                className="btn btn-enhance"
+                onClick={() => onEnhance(article._id || article.id)}
+                disabled={isEnhancing}
+              >
+                {isEnhancing ? (
+                  <>
+                    <div className="spinner-small"></div>
+                    Enhancing...
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                      <path d="M2 17l10 5 10-5"></path>
+                      <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    Enhance with AI
+                  </>
+                )}
+              </button>
+            )}
             {onViewVersions && (
               <button 
                 className="btn btn-secondary"

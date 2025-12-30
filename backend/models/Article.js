@@ -25,7 +25,7 @@ const articleSchema = new mongoose.Schema({
   sourceUrl: {
     type: String,
     required: true,
-    unique: true
+    index: { unique: true }
   },
   imageUrl: {
     type: String,
@@ -57,7 +57,7 @@ const articleSchema = new mongoose.Schema({
 
 // Index for faster queries
 articleSchema.index({ publishedDate: -1 });
-articleSchema.index({ sourceUrl: 1 });
+// sourceUrl index is already defined above, don't duplicate
 
 const Article = mongoose.model('Article', articleSchema);
 

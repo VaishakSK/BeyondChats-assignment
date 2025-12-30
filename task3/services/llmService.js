@@ -7,8 +7,11 @@ import axios from 'axios';
  */
 export class LLMService {
   constructor() {
-    this.geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-    this.geminiModel = process.env.GEMINI_MODEL || 'gemini-pro';
+    // Use environment variables (set in .env file)
+    // Fallback to hardcoded key for development convenience
+    this.geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || 'AIzaSyArT4Pd6XivvgrR3pREi1CYSyfOl55vAQI';
+    // Use gemini-2.5-flash (latest and fastest)
+    this.geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   }
 
   /**
@@ -50,9 +53,22 @@ TITLE: [Enhanced title]
 CONTENT: [Enhanced content with proper HTML formatting - use <h2>, <h3>, <p>, <ul>, <ol>, <strong>, <em> tags as needed]`;
 
     try {
-      console.log('🤖 Calling Gemini API to enhance article...');
+      console.log(`🤖 Calling Gemini API (${this.geminiModel}) to enhance article...`);
       
-      const result = await model.generateContent(prompt);
+      let result;
+      try {
+        result = await model.generateContent(prompt);
+      } catch (modelError) {
+        // If model not found, try alternative models
+        if (modelError.message.includes('not found') || modelError.message.includes('404')) {
+          console.log(`⚠️  Model ${this.geminiModel} not available, trying gemini-1.5-flash...`);
+          const altModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          result = await altModel.generateContent(prompt);
+        } else {
+          throw modelError;
+        }
+      }
+      
       const response = result.response;
       const text = response.text();
       
@@ -85,6 +101,22 @@ CONTENT: [Enhanced content with proper HTML formatting - use <h2>, <h3>, <p>, <u
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  /**
+   * Main enhance method - uses Gemini API
+   */
+  async enhanceArticle(originalArticle, referenceArticles) {
+    try {
+      if (this.geminiApiKey) {
+        return await this.enhanceWithGemini(originalArticle, referenceArticles);
+      } else {
+        throw new Error('No LLM API configured. Please set GEMINI_API_KEY or GOOGLE_API_KEY');
+      }
+    } catch (error) {
+      console.error('LLM enhancement error:', error.message);
+      throw error;
+    }
   }
 }
 

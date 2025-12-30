@@ -4,8 +4,8 @@ import axios from 'axios';
  * Service to interact with the article CRUD API
  */
 export class APIService {
-  constructor(baseUrl = 'http://localhost:5000/api') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl = null) {
+    this.baseUrl = baseUrl || process.env.API_BASE_URL || 'http://localhost:5000/api';
   }
 
   /**
@@ -22,14 +22,14 @@ export class APIService {
   }
 
   /**
-   * Update article (creates new version)
+   * Create enhanced article
    */
-  async updateArticle(articleId, articleData) {
+  async createEnhancedArticle(enhancedArticleData) {
     try {
-      const response = await axios.put(`${this.baseUrl}/articles/${articleId}`, articleData);
+      const response = await axios.post(`${this.baseUrl}/enhanced-articles`, enhancedArticleData);
       return response.data.data || response.data;
     } catch (error) {
-      console.error(`Error updating article ${articleId}:`, error.message);
+      console.error(`Error creating enhanced article:`, error.message);
       throw error;
     }
   }

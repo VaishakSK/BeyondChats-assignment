@@ -1,137 +1,97 @@
 # Quick Start Guide
 
-## Prerequisites
+Get the BeyondChats Article Management System up and running in minutes!
 
-- Node.js (v16 or higher)
-- MongoDB (installed and running)
-- npm or yarn
+## 🚀 3-Step Setup
 
-## Step-by-Step Setup
-
-### 1. Backend Setup
+### Step 1: Install Dependencies
 
 ```bash
-# Navigate to backend directory
+# Backend
 cd backend
-
-# Install dependencies
 npm install
 
-# Create .env file (copy the content below)
-# PORT=5000
-# MONGODB_URI=mongodb+srv://vaishakkolhar123:vaishaksk@assignment.kjibzln.mongodb.net/?appName=assignment
-# CORS_ORIGIN=http://localhost:5173
+# Frontend
+cd ../frontend
+npm install
 
-# Start the backend server
-npm run dev
+# Task 3 (Article Enhancement)
+cd ../task3
+npm install
 ```
 
-Backend should now be running on `http://localhost:5000`
+### Step 2: Start Services
 
-### 2. Frontend Setup
-
+**Terminal 1 - Backend:**
 ```bash
-# Navigate to frontend directory (in a new terminal)
-cd frontend
-
-# Install dependencies
-npm install
-
-# Create .env file (copy the content below)
-# VITE_LARAVEL_API_URL=http://localhost:8000/api
-# VITE_NODE_API_URL=http://localhost:5000/api
-
-# Start the frontend development server
+cd backend
 npm run dev
 ```
+✅ Backend runs on `http://localhost:5000`
 
-Frontend should now be running on `http://localhost:5173`
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+✅ Frontend runs on `http://localhost:5173`
 
-### 3. Testing Phase 2 (Node.js API)
+### Step 3: Use the Application
 
 1. Open `http://localhost:5173` in your browser
-2. Click on the "Phase 2: Node.js API" tab
-3. Click "Scrape BeyondChats Articles" button
-4. Wait for articles to be scraped and displayed
-5. Click on any article card to view details
-6. Use "View Versions" to see update history
-7. Use "Delete" to remove articles
+2. **Phase 2 Tab**:
+   - Click "Scrape BeyondChats Articles" to fetch articles
+   - Click "Enhance with AI" to improve articles
+   - Click articles to view Original/Enhanced versions
 
-### 4. Laravel API Setup (Phase 1)
+## ✅ Pre-Configured
 
-**Important:** You need to set up a Laravel API for Phase 1. See `LARAVEL_API_SETUP.md` for complete instructions.
+- ✅ MongoDB Atlas connection
+- ✅ SerpAPI key
+- ✅ Gemini API key
 
-Quick setup:
+**No configuration needed!** Everything is ready to use.
 
-```bash
-# Install Laravel (if not already installed)
-composer global require laravel/installer
+## 🎯 Quick Actions
 
-# Create new Laravel project
-composer create-project laravel/laravel laravel-api
-cd laravel-api
+### Scrape Articles
+1. Go to Phase 2 tab
+2. Click "Scrape BeyondChats Articles"
+3. Wait ~30 seconds
+4. Articles appear in list
 
-# Create Article model and migration
-php artisan make:model Article -m
-php artisan make:controller ArticleController --api
+### Enhance Article
+1. Click "Enhance with AI" on any article
+2. Wait 1-2 minutes
+3. Click the article to view
+4. Switch between "Original" and "Enhanced" tabs
 
-# Run migrations
-php artisan migrate
+### View Versions
+1. Click any article card
+2. See version tabs (if enhanced)
+3. Switch between Original/Enhanced
+4. View reference articles in enhanced version
 
-# Start Laravel server
-php artisan serve
-```
+## 🐛 Troubleshooting
 
-**For detailed setup instructions, see `LARAVEL_API_SETUP.md`**
+**Backend won't start?**
+- Check if port 5000 is available
+- Verify MongoDB connection
 
-### 5. Testing Phase 1 (Laravel API)
+**Frontend shows errors?**
+- Make sure backend is running
+- Check browser console for details
 
-1. Make sure your Laravel API is running on `http://localhost:8000`
-2. Update `VITE_LARAVEL_API_URL` in frontend `.env` if needed
-3. Click on the "Phase 1: Laravel API" tab
-4. Articles from Laravel API should be displayed
+**Enhancement fails?**
+- Check backend console for errors
+- Verify API keys are valid
+- Wait a bit and try again
 
-## Troubleshooting
+## 📚 Need More Details?
 
-### MongoDB Connection Error
-- Verify MONGODB_URI in backend `.env` file
-- Check your internet connection (MongoDB Atlas requires internet)
-- Ensure MongoDB Atlas cluster is running and accessible
+- See `README.md` for full documentation
+- See `IMPLEMENTATION.md` for technical details
 
-### CORS Errors
-- Make sure CORS_ORIGIN in backend `.env` matches frontend URL
-- Default: `http://localhost:5173`
+## 🎉 You're Ready!
 
-### API Connection Errors
-- Check if backend is running on port 5000
-- Check if Laravel API is running (for Phase 1)
-- Verify API URLs in frontend `.env` file
-
-### Scraping Not Working
-- The scraping function may need adjustments based on BeyondChats website structure
-- Check browser console for errors
-- Verify network connectivity
-
-## Common Commands
-
-### Backend
-```bash
-npm start      # Production mode
-npm run dev    # Development mode with nodemon
-```
-
-### Frontend
-```bash
-npm run dev    # Development server
-npm run build  # Production build
-npm run preview # Preview production build
-```
-
-## Next Steps
-
-1. Customize the scraping logic in `backend/controllers/scrapeController.js` based on actual BeyondChats HTML structure
-2. Add authentication if needed
-3. Implement article editing functionality in the frontend
-4. Add more filtering and search options
-5. Deploy to production
-
+Everything is configured and ready to use. Just start the services and begin managing articles!

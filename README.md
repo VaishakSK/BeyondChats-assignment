@@ -1,187 +1,390 @@
-# BeyondChats Assignment
+# BeyondChats Article Management System
 
-Full-stack article management system with React frontend and Node.js backend.
+A comprehensive full-stack article management system with AI-powered content enhancement capabilities. This project implements a React frontend, Node.js/Express backend with MongoDB, and an automated article enhancement system using Google Search and Gemini AI.
 
-## Project Structure
+## 📋 Table of Contents
 
-```
-beyondChats-assignment/
-├── frontend/                 # React frontend application
-│   ├── src/
-│   │   ├── components/       # React components
-│   │   │   ├── ArticleCard.jsx
-│   │   │   ├── ArticleCard.css
-│   │   │   ├── ArticleList.jsx
-│   │   │   ├── ArticleList.css
-│   │   │   ├── ArticleModal.jsx
-│   │   │   └── ArticleModal.css
-│   │   ├── services/         # API service layer
-│   │   │   └── apiService.js
-│   │   ├── App.jsx           # Main app component
-│   │   ├── App.css           # Main app styles
-│   │   ├── main.jsx          # Entry point
-│   │   └── index.css         # Global styles
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.js
-│
-└── backend/                  # Node.js/Express backend
-    ├── controllers/          # Request handlers
-    │   ├── articleController.js
-    │   └── scrapeController.js
-    ├── models/               # MongoDB models
-    │   └── Article.js
-    ├── routes/               # API routes
-    │   ├── articleRoutes.js
-    │   └── scrapeRoutes.js
-    ├── server.js             # Express server
-    ├── package.json
-    └── .env.example
-```
+- [Overview](#overview)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [How It Works](#how-it-works)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Project Phases](#project-phases)
 
-## Features
+## 🎯 Overview
+
+This project is a complete article management system built in three phases:
+
+1. **Phase 1**: React frontend that fetches and displays articles from Laravel APIs
+2. **Phase 2**: Node.js backend with MongoDB for scraping, storing, and managing articles with full CRUD operations
+3. **Phase 3**: AI-powered article enhancement system that improves articles using Google Search results and Gemini AI
+
+## ✨ Features
 
 ### Phase 1: Laravel API Integration
-- ✅ Fetch articles from Laravel API
+- ✅ Fetch articles from Laravel API endpoints
 - ✅ Display original articles and their update versions
-- ✅ Responsive, modern UI with animations
-- ✅ Professional card-based layout
+- ✅ Responsive, modern UI with smooth animations
+- ✅ Professional card-based article layout
 
 ### Phase 2: Node.js API with MongoDB
 - ✅ Scrape articles from BeyondChats blog (5 oldest articles)
-- ✅ Store articles in MongoDB
-- ✅ Full CRUD APIs for articles
+- ✅ Store articles in MongoDB Atlas
+- ✅ Full CRUD APIs for article management
 - ✅ Article versioning system
 - ✅ View article update history
+- ✅ Beautiful, user-friendly frontend interface
 
-## Setup Instructions
+### Phase 3: AI Article Enhancement
+- ✅ Google Search integration (SerpAPI)
+- ✅ Automatic content scraping from top-ranking articles
+- ✅ AI-powered article enhancement using Gemini 2.5 Flash
+- ✅ Automatic citation generation
+- ✅ Separate database collection for enhanced articles
+- ✅ Version comparison (Original vs Enhanced)
+- ✅ Reference articles tracking
 
-### Laravel API Setup (Phase 1)
+## 📁 Project Structure
 
-For Phase 1, you need to set up a Laravel API. See **[LARAVEL_API_SETUP.md](./LARAVEL_API_SETUP.md)** for complete step-by-step instructions.
-
-Quick start:
-```bash
-composer create-project laravel/laravel laravel-api
-cd laravel-api
-php artisan serve
+```
+beyondChats-assignment/
+├── frontend/                    # React frontend application
+│   ├── src/
+│   │   ├── components/         # React components
+│   │   │   ├── ArticleCard.jsx
+│   │   │   ├── ArticleList.jsx
+│   │   │   ├── ArticleModal.jsx
+│   │   │   └── ErrorBoundary.jsx
+│   │   ├── services/           # API service layer
+│   │   │   └── apiService.js
+│   │   ├── App.jsx             # Main app component
+│   │   ├── App.css             # App styles
+│   │   ├── main.jsx            # Entry point
+│   │   └── index.css           # Global styles
+│   ├── package.json
+│   └── vite.config.js
+│
+├── backend/                     # Node.js/Express backend
+│   ├── controllers/            # Request handlers
+│   │   ├── articleController.js
+│   │   ├── enhancedArticleController.js
+│   │   └── scrapeController.js
+│   ├── models/                 # MongoDB models
+│   │   ├── Article.js
+│   │   └── EnhancedArticle.js
+│   ├── routes/                 # API routes
+│   │   ├── articleRoutes.js
+│   │   ├── enhancedArticleRoutes.js
+│   │   ├── enhanceRoutes.js
+│   │   └── scrapeRoutes.js
+│   ├── server.js               # Express server
+│   └── package.json
+│
+├── task3/                       # Article enhancement system
+│   ├── services/
+│   │   ├── googleSearch.js     # Google Search integration
+│   │   ├── articleScraper.js   # Web scraping service
+│   │   ├── llmService.js       # Gemini AI integration
+│   │   └── apiService.js       # API client
+│   ├── utils/
+│   │   └── citationFormatter.js
+│   ├── index.js                # Main enhancement script
+│   └── package.json
+│
+└── README.md                    # This file
 ```
 
-### Backend Setup (Phase 2)
-
-1. Navigate to backend directory:
-```bash
-cd backend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file:
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://vaishakkolhar123:vaishaksk@assignment.kjibzln.mongodb.net/?appName=assignment
-CORS_ORIGIN=http://localhost:5173
-```
-
-4. MongoDB Atlas connection is already configured - no local MongoDB needed
-
-5. Start the server:
-```bash
-npm run dev
-```
-
-The backend will run on `http://localhost:5000`
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file:
-```env
-VITE_LARAVEL_API_URL=http://localhost:8000/api
-VITE_NODE_API_URL=http://localhost:5000/api
-```
-
-4. Start the development server:
-```bash
-npm run dev
-```
-
-The frontend will run on `http://localhost:5173`
-
-## API Endpoints
-
-### Node.js Backend
-
-#### Articles
-- `GET /api/articles` - Get all articles (with pagination)
-- `GET /api/articles/:id` - Get article by ID
-- `GET /api/articles/:id/versions` - Get article versions (original + updates)
-- `POST /api/articles` - Create new article
-- `PUT /api/articles/:id` - Update article (creates new version)
-- `DELETE /api/articles/:id` - Delete article
-
-#### Scraping
-- `POST /api/scrape/beyondchats` - Scrape articles from BeyondChats blog
-
-### Laravel API (Phase 1)
-- See `LARAVEL_API_SETUP.md` for complete setup instructions
-- Update `VITE_LARAVEL_API_URL` in frontend `.env` with your Laravel API URL
-- Required endpoints:
-  - `GET /api/articles` - Get all articles
-  - `GET /api/articles/:id` - Get article by ID
-  - `GET /api/articles/:id/versions` - Get article versions
-
-## Usage
-
-1. **Phase 1**: Switch to "Phase 1: Laravel API" tab to view articles from your Laravel backend
-
-2. **Phase 2**: 
-   - Switch to "Phase 2: Node.js API" tab
-   - Click "Scrape BeyondChats Articles" to fetch articles from BeyondChats blog
-   - View, manage, and delete articles
-   - Click on any article card to view details and version history
-
-## Technologies Used
+## 🛠 Technology Stack
 
 ### Frontend
-- React 19
-- Vite
-- Axios
-- Modern CSS with animations and gradients
-- Responsive design
+- **React 19** - Modern UI library
+- **Vite** - Fast build tool and dev server
+- **Axios** - HTTP client for API calls
+- **Modern CSS** - Gradients, animations, responsive design
 
 ### Backend
-- Node.js
-- Express.js
-- MongoDB with Mongoose
-- Cheerio for web scraping
-- Axios for HTTP requests
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web framework
+- **MongoDB** - NoSQL database (MongoDB Atlas)
+- **Mongoose** - MongoDB object modeling
+- **Cheerio** - HTML parsing and web scraping
+- **Axios** - HTTP requests
 
-## UI Features
+### Task 3 (Article Enhancement)
+- **Google Generative AI** - Gemini 2.5 Flash for content enhancement
+- **SerpAPI** - Google Search API
+- **Cheerio** - Web scraping from search results
+- **Axios** - HTTP client
 
-- 🎨 Modern gradient designs
-- ✨ Smooth animations and transitions
-- 📱 Fully responsive layout
-- 🎯 Interactive card-based article display
-- 🔍 Modal view for article details
-- 📊 Version history tracking
-- 🎭 Hover effects and visual feedback
+### Database
+- **MongoDB Atlas** - Cloud-hosted MongoDB
+- **Two Collections**:
+  - `articles` - Original and scraped articles
+  - `enhancedarticles` - AI-enhanced articles with metadata
 
-## Notes
+## 🔄 How It Works
 
-- Make sure MongoDB is installed and running before starting the backend
-- Update the Laravel API URL in frontend `.env` if your Laravel backend is on a different port
-- The scraping functionality may need adjustments based on the actual HTML structure of BeyondChats blog
+### Phase 1: Article Display
+1. Frontend fetches articles from Laravel API (or Node.js backend)
+2. Displays articles in a responsive card layout
+3. Shows original articles and their update versions
+4. Modal view for detailed article content
 
+### Phase 2: Article Scraping & Management
+1. User clicks "Scrape BeyondChats Articles"
+2. Backend finds the last page of BeyondChats blog
+3. Extracts 5 oldest articles
+4. Stores articles in MongoDB with full metadata
+5. Frontend displays articles with CRUD operations
+
+### Phase 3: AI Article Enhancement
+1. User clicks "Enhance with AI" on any article
+2. System searches Google for similar articles
+3. Scrapes content from top 2 blog/article results
+4. Uses Gemini AI to enhance article matching top-ranking style
+5. Adds citations and reference articles
+6. Saves enhanced article to separate collection
+7. Frontend shows version tabs (Original/Enhanced)
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 16+ installed
+- MongoDB Atlas account (or local MongoDB)
+- API keys (already configured in code):
+  - SerpAPI key
+  - Gemini API key
+
+### Installation
+
+1. **Clone the repository** (if applicable)
+
+2. **Install Backend Dependencies**
+```bash
+cd backend
+npm install
+```
+
+3. **Install Frontend Dependencies**
+```bash
+cd frontend
+npm install
+```
+
+4. **Install Task 3 Dependencies**
+```bash
+cd task3
+npm install
+```
+
+### Configuration
+
+**For Development (Current Setup)**:
+- API keys are hardcoded in services for convenience
+- MongoDB connection string is in `backend/server.js`
+- No `.env` file required for basic setup
+
+**For Production**:
+- Create `.env` files using `.env.example` templates
+- Move all API keys and credentials to `.env` files
+- Never commit `.env` files to version control
+
+### Running the Application
+
+1. **Start Backend Server**
+```bash
+cd backend
+npm run dev
+```
+Backend runs on `http://localhost:5000`
+
+2. **Start Frontend**
+```bash
+cd frontend
+npm run dev
+```
+Frontend runs on `http://localhost:5173`
+
+3. **Using the Application**
+   - Open `http://localhost:5173` in your browser
+   - **Phase 1 Tab**: View articles from API
+   - **Phase 2 Tab**: 
+     - Click "Scrape BeyondChats Articles" to fetch articles
+     - Click "Enhance with AI" to improve articles
+     - View, manage, and delete articles
+     - Click articles to view Original/Enhanced versions
+
+## 📡 API Documentation
+
+### Articles API
+
+#### Get All Articles
+```
+GET /api/articles
+Query Parameters:
+  - page: Page number (default: 1)
+  - limit: Items per page (default: 10)
+  - sort: Sort order (default: -createdAt)
+```
+
+#### Get Article by ID
+```
+GET /api/articles/:id
+```
+
+#### Get Article Versions
+```
+GET /api/articles/:id/versions
+Returns: Original article and all update versions
+```
+
+#### Create Article
+```
+POST /api/articles
+Body: { title, content, author, sourceUrl, ... }
+```
+
+#### Update Article
+```
+PUT /api/articles/:id
+Creates a new version of the article
+```
+
+#### Delete Article
+```
+DELETE /api/articles/:id
+```
+
+### Scraping API
+
+#### Scrape BeyondChats Articles
+```
+POST /api/scrape/beyondchats
+Scrapes 5 oldest articles from BeyondChats blog
+```
+
+### Enhanced Articles API
+
+#### Create Enhanced Article
+```
+POST /api/enhanced-articles
+Body: { originalArticleId, title, content, referenceArticles, ... }
+```
+
+#### Get Article with Versions
+```
+GET /api/enhanced-articles/versions/:id
+Returns: { original, enhanced, hasEnhanced }
+```
+
+#### Get Enhanced Article by Original ID
+```
+GET /api/enhanced-articles/original/:originalId
+Returns: Latest enhanced version
+```
+
+### Enhancement API
+
+#### Enhance Article
+```
+POST /api/enhance/:id
+Starts background enhancement process
+```
+
+## 📊 Project Phases
+
+### Phase 1: Laravel API Integration
+- **Status**: ✅ Complete
+- **Purpose**: Display articles from Laravel API
+- **Implementation**: React frontend with API service layer
+- **Note**: Uses Node.js backend as Laravel API proxy
+
+### Phase 2: Node.js Backend with MongoDB
+- **Status**: ✅ Complete
+- **Purpose**: Scrape, store, and manage articles
+- **Implementation**: 
+  - Express.js backend
+  - MongoDB with Mongoose
+  - Web scraping with Cheerio
+  - Full CRUD operations
+  - Article versioning
+
+### Phase 3: AI Article Enhancement
+- **Status**: ✅ Complete
+- **Purpose**: Enhance articles using AI
+- **Implementation**:
+  - Google Search integration (SerpAPI)
+  - Content scraping from search results
+  - Gemini AI for content enhancement
+  - Citation generation
+  - Separate enhanced articles collection
+  - Version comparison UI
+
+## 🎨 UI Features
+
+- **Modern Design**: Gradient backgrounds, smooth animations
+- **Responsive Layout**: Works on desktop, tablet, and mobile
+- **Interactive Cards**: Hover effects, click-to-view details
+- **Version Tabs**: Switch between Original and Enhanced versions
+- **Loading States**: Spinners and progress indicators
+- **Error Handling**: User-friendly error messages
+- **Modal Views**: Detailed article display with HTML rendering
+
+## 🔑 Key Features
+
+1. **Article Versioning**: Track original and enhanced versions separately
+2. **Web Scraping**: Automatically fetch articles from BeyondChats blog
+3. **AI Enhancement**: Improve articles using Google Search and Gemini AI
+4. **Citation System**: Automatic reference article citations
+5. **CRUD Operations**: Full create, read, update, delete functionality
+6. **Modern UI**: Beautiful, responsive design with animations
+
+## 📝 Notes
+
+- MongoDB Atlas is pre-configured - no local MongoDB needed
+- API keys are hardcoded in services (SerpAPI, Gemini)
+- The scraping functionality handles various website structures
+- Enhanced articles are stored separately from originals
+- Version comparison allows viewing Original vs Enhanced side-by-side
+
+## 🎯 Usage Examples
+
+### Scraping Articles
+1. Go to Phase 2 tab
+2. Click "Scrape BeyondChats Articles"
+3. Wait for scraping to complete
+4. View scraped articles in the list
+
+### Enhancing Articles
+1. Go to Phase 2 tab
+2. Click "Enhance with AI" on any article
+3. Wait 1-2 minutes for processing
+4. Click the article to view
+5. Switch between "Original Version" and "Enhanced Version" tabs
+
+### Viewing Versions
+1. Click on any article card
+2. If enhanced version exists, see version tabs
+3. Click "Original Version" or "Enhanced Version"
+4. View reference articles in enhanced version
+
+## 🚧 Future Enhancements
+
+- User authentication and authorization
+- Article editing in frontend
+- Search and filter functionality
+- Pagination UI improvements
+- Image upload capability
+- Admin dashboard
+- Real-time updates with WebSockets
+- Multiple enhancement models support
+
+## 📄 License
+
+ISC
+
+## 👤 Author
+
+BeyondChats Assignment Project

@@ -14,12 +14,17 @@ async function enhanceArticle(articleId) {
   try {
     console.log('🚀 Starting article enhancement process...\n');
 
-    // Initialize services
-    const apiService = new APIService(process.env.API_BASE_URL || 'http://localhost:5000/api');
+    // Initialize services (API keys are configured in service constructors)
+    const apiService = new APIService();
     const googleSearch = new GoogleSearchService();
     const articleScraper = new ArticleScraper();
     const llmService = new LLMService();
     const citationFormatter = new CitationFormatter();
+
+    // Verify LLMService has the enhanceArticle method
+    if (typeof llmService.enhanceArticle !== 'function') {
+      throw new Error('LLMService.enhanceArticle is not a function. Available methods: ' + Object.getOwnPropertyNames(Object.getPrototypeOf(llmService)).join(', '));
+    }
 
     // Step 1: Fetch article from API
     console.log(`📥 Step 1: Fetching article ${articleId} from API...`);
@@ -42,16 +47,23 @@ async function enhanceArticle(articleId) {
 
     console.log(`✅ Found ${searchResults.length} relevant articles on Google\n`);
 
-    // Step 3: Scrape content from top 2 results
+    // Step 3: Scrape content from top 2 results (try more if needed)
     console.log('📄 Step 3: Scraping content from reference articles...');
-    const urlsToScrape = searchResults.slice(0, 2).map(result => result.url);
-    const referenceArticles = await articleScraper.scrapeArticles(urlsToScrape);
+    let urlsToScrape = searchResults.slice(0, 2).map(result => result.url);
+    let referenceArticles = await articleScraper.scrapeArticles(urlsToScrape);
+    
+    // If we didn't get enough articles, try more URLs
+    if (referenceArticles.length === 0 && searchResults.length > 2) {
+      console.log(`⚠️  No articles scraped from first 2 URLs, trying more...`);
+      urlsToScrape = searchResults.slice(0, Math.min(5, searchResults.length)).map(result => result.url);
+      referenceArticles = await articleScraper.scrapeArticles(urlsToScrape);
+    }
     
     if (referenceArticles.length === 0) {
-      throw new Error('Failed to scrape content from reference articles');
+      throw new Error(`Failed to scrape content from any reference articles. Tried ${urlsToScrape.length} URLs.`);
     }
 
-    console.log(`✅ Scraped ${referenceArticles.length} reference articles\n`);
+    console.log(`✅ Scraped ${referenceArticles.length} reference article(s) from ${urlsToScrape.length} URL(s)\n`);
 
     // Step 4: Enhance article using LLM
     console.log('🤖 Step 4: Enhancing article using LLM...');
@@ -70,9 +82,10 @@ async function enhanceArticle(articleId) {
     
     console.log('✅ Citations added\n');
 
-    // Step 6: Update article via API (creates new version)
-    console.log('💾 Step 6: Publishing enhanced article via API...');
-    const updatedArticle = await apiService.updateArticle(articleId, {
+    // Step 6: Save enhanced article to database
+    console.log('💾 Step 6: Saving enhanced article to database...');
+    const savedEnhancedArticle = await apiService.createEnhancedArticle({
+      originalArticleId: articleId,
       title: enhancedArticle.title,
       content: enhancedArticle.content,
       contentHtml: enhancedArticle.contentHtml,
@@ -82,18 +95,27 @@ async function enhanceArticle(articleId) {
       imageUrl: originalArticle.imageUrl || '',
       excerpt: enhancedArticle.content.substring(0, 200),
       tags: originalArticle.tags || [],
-      isScraped: originalArticle.isScraped || false
+      referenceArticles: referenceArticles.map(ref => ({
+        title: ref.title,
+        url: ref.sourceUrl,
+        author: ref.author || 'Unknown',
+        publishedDate: ref.publishedDate || null
+      })),
+      citations: citationsText,
+      citationsHtml: citationsHtml,
+      modelUsed: 'gemini-2.5-flash',
+      searchQuery: searchQuery
     });
 
-    console.log('✅ Enhanced article published successfully!\n');
+    console.log('✅ Enhanced article saved successfully!\n');
     console.log('📊 Summary:');
     console.log(`   - Original Article: "${originalArticle.title}"`);
     console.log(`   - Enhanced Article: "${enhancedArticle.title}"`);
     console.log(`   - Reference Articles: ${referenceArticles.length}`);
-    console.log(`   - New Version ID: ${updatedArticle._id || updatedArticle.id}`);
-    console.log(`   - View at: ${process.env.API_BASE_URL || 'http://localhost:5000/api'}/articles/${updatedArticle._id || updatedArticle.id}`);
+    console.log(`   - Enhanced Article ID: ${savedEnhancedArticle._id || savedEnhancedArticle.id}`);
+    console.log(`   - View at: ${process.env.API_BASE_URL || 'http://localhost:5000/api'}/enhanced-articles/versions/${articleId}`);
 
-    return updatedArticle;
+    return savedEnhancedArticle;
   } catch (error) {
     console.error('❌ Error enhancing article:', error.message);
     throw error;
@@ -124,9 +146,11 @@ async function main() {
 }
 
 // Run if executed directly
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))) {
-  main();
-} else if (!process.argv[1] || process.argv[1].includes('index.js')) {
+const isMainModule = import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}` || 
+                     process.argv[1]?.includes('index.js') ||
+                     !process.argv[1];
+
+if (isMainModule) {
   main();
 }
 

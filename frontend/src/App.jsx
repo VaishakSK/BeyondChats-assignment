@@ -87,10 +87,21 @@ function App() {
     // Try to fetch versions if it's a Node.js article
     if (activeTab === 'phase2' && article._id) {
       try {
-        const response = await nodeArticleService.getArticleVersions(article._id);
-        setArticleVersions(response.data);
+        const response = await nodeArticleService.getArticleWithVersions(article._id);
+        // Transform response to match modal expectations
+        setArticleVersions({
+          original: response.data.original,
+          enhanced: response.data.enhanced,
+          hasEnhanced: response.data.hasEnhanced
+        });
       } catch (err) {
         console.error('Error fetching versions:', err);
+        // If no enhanced version, just show original
+        setArticleVersions({
+          original: article,
+          enhanced: null,
+          hasEnhanced: false
+        });
       }
     }
   };
@@ -106,6 +117,27 @@ function App() {
       alert('Article deleted successfully!');
     } catch (err) {
       alert('Error deleting article: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  // Enhance article using Task 3
+  const handleEnhance = async (articleId) => {
+    if (!window.confirm('This will enhance the article using Google Search and AI. This may take 1-2 minutes. Continue?')) {
+      return;
+    }
+    
+    setEnhancing(prev => ({ ...prev, [articleId]: true }));
+    try {
+      const response = await nodeArticleService.enhanceArticle(articleId);
+      alert('Article enhancement started! It will be processed in the background. Please refresh in a few moments to see the enhanced version.');
+      // Refresh articles after a delay
+      setTimeout(() => {
+        fetchNodeArticles();
+      }, 5000);
+    } catch (err) {
+      alert('Error enhancing article: ' + (err.message || 'Unknown error'));
+    } finally {
+      setEnhancing(prev => ({ ...prev, [articleId]: false }));
     }
   };
 
@@ -215,8 +247,10 @@ function App() {
                 onViewVersions={handleViewVersions}
                 onEdit={null}
                 onDelete={handleDelete}
+                onEnhance={handleEnhance}
                 showActions={true}
                 onArticleClick={handleViewArticle}
+                enhancing={enhancing}
               />
             )}
           </div>

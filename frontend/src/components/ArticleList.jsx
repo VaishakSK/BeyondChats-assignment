@@ -9,8 +9,10 @@ const ArticleList = ({
   onViewVersions, 
   onEdit, 
   onDelete,
+  onEnhance,
   showActions = false,
-  onArticleClick
+  onArticleClick,
+  enhancing = {}
 }) => {
   if (loading) {
     return (
@@ -60,8 +62,10 @@ const ArticleList = ({
           onViewVersions={onViewVersions}
           onEdit={onEdit}
           onDelete={onDelete}
+          onEnhance={onEnhance}
           showActions={showActions}
           onClick={onArticleClick}
+          isEnhancing={enhancing[article._id || article.id] || false}
         />
       ))}
     </div>

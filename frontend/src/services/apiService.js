@@ -146,5 +146,16 @@ export const nodeArticleService = {
       throw error;
     }
   },
+
+  // Get article with versions (original + enhanced)
+  getArticleWithVersions: async (articleId) => {
+    try {
+      const response = await nodeApi.get(`/enhanced-articles/versions/${articleId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching article with versions:', error);
+      throw error;
+    }
+  },
 };
 

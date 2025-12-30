@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import articleRoutes from './routes/articleRoutes.js';
 import scrapeRoutes from './routes/scrapeRoutes.js';
+import enhanceRoutes from './routes/enhanceRoutes.js';
+import enhancedArticleRoutes from './routes/enhancedArticleRoutes.js';
 
 dotenv.config();
 
@@ -19,21 +21,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://vaishakkolhar123:vaishaksk@assignment.kjibzln.mongodb.net/?appName=assignment', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+// Use MONGODB_URI from .env file or fallback (for development)
+const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://vaishakkolhar123:vaishaksk@assignment.kjibzln.mongodb.net/?appName=assignment';
+mongoose.connect(mongoUri)
 .then(() => console.log('✅ MongoDB connected successfully'))
 .catch((error) => console.error('❌ MongoDB connection error:', error));
 
 // Routes
 app.use('/api/articles', articleRoutes);
 app.use('/api/scrape', scrapeRoutes);
-
-// Article enhancement route (Task 3) - optional
-// Note: Uncomment the import and route if you want to enable API endpoint
-// import enhanceRoutes from './routes/enhanceRoutes.js';
-// app.use('/api/enhance', enhanceRoutes);
+app.use('/api/enhance', enhanceRoutes); // Task 3: Article enhancement
+app.use('/api/enhanced-articles', enhancedArticleRoutes); // Enhanced articles
 
 // Note: Laravel mock routes are not needed since we're using the same backend
 // Phase 1 frontend now uses Node.js API endpoints directly
