@@ -10,10 +10,16 @@ API_BASE_URL=http://localhost:5000/api
 
 # Google Search Configuration - SerpAPI
 # Get your key from: https://serpapi.com/
+# REQUIRED: You must set this value
 SERPAPI_KEY=your_serpapi_key_here
+
+# Alternative: Google Custom Search API (if not using SerpAPI)
+# GOOGLE_API_KEY=your_google_api_key_here
+# GOOGLE_CSE_ID=your_custom_search_engine_id_here
 
 # LLM Configuration - Google Gemini
 # Get your key from: https://makersuite.google.com/app/apikey
+# REQUIRED: You must set this value
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 `;

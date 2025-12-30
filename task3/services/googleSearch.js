@@ -6,11 +6,14 @@ import axios from 'axios';
  */
 export class GoogleSearchService {
   constructor() {
-    // Use environment variables (set in .env file)
-    // Fallback to hardcoded key for development convenience
-    this.serpApiKey = process.env.SERPAPI_KEY || 'afdc874d2273454e83dcf63f5147135a10a1c0d1b427878df035ac406bc0f415';
+    // Use environment variables (required from .env file)
+    this.serpApiKey = process.env.SERPAPI_KEY;
     this.googleApiKey = process.env.GOOGLE_API_KEY;
     this.googleCseId = process.env.GOOGLE_CSE_ID;
+    
+    if (!this.serpApiKey && (!this.googleApiKey || !this.googleCseId)) {
+      throw new Error('Either SERPAPI_KEY or (GOOGLE_API_KEY + GOOGLE_CSE_ID) must be set in .env file');
+    }
   }
 
   /**

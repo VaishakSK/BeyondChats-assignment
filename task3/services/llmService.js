@@ -7,9 +7,11 @@ import axios from 'axios';
  */
 export class LLMService {
   constructor() {
-    // Use environment variables (set in .env file)
-    // Fallback to hardcoded key for development convenience
-    this.geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || 'AIzaSyD6XRvNTFskOck-foWTmF3R-VzFQerMP8g';
+    // Use environment variables (required from .env file)
+    this.geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!this.geminiApiKey) {
+      throw new Error('GEMINI_API_KEY or GOOGLE_API_KEY must be set in .env file');
+    }
     // Use gemini-2.5-flash (latest and fastest)
     this.geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   }
