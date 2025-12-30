@@ -1,0 +1,136 @@
+.article-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 24px;
+  padding: 24px 0;
+}
+
+.article-list-loading,
+.article-list-error,
+.article-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.article-list-loading svg,
+.article-list-error svg,
+.article-list-empty svg {
+  color: #667eea;
+  margin-bottom: 24px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.article-list-error svg {
+  color: #fc8181;
+}
+
+.error-help {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+  text-align: left;
+  max-width: 600px;
+}
+
+.error-help h4 {
+  color: #1a202c;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+}
+
+.error-help ol {
+  margin: 12px 0;
+  padding-left: 24px;
+  color: #4a5568;
+}
+
+.error-help li {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.error-help code {
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #2d3748;
+}
+
+.error-help p {
+  margin-top: 12px;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.article-list-empty svg {
+  color: #cbd5e0;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 24px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.article-list-loading h3,
+.article-list-error h3,
+.article-list-empty h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.article-list-loading p,
+.article-list-error p,
+.article-list-empty p {
+  color: #718096;
+  font-size: 1rem;
+}
+
+.error-message {
+  margin-bottom: 24px;
+  padding: 12px;
+  background: #fed7d7;
+  border-left: 4px solid #fc8181;
+  border-radius: 4px;
+  color: #c53030;
+  font-weight: 500;
+  max-width: 600px;
+}
+
+@media (max-width: 768px) {
+  .article-list {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px 0;
+  }
+}
+

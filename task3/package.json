@@ -1,0 +1,26 @@
+{
+  "name": "article-enhancer",
+  "version": "1.0.0",
+  "description": "Task 3: Enhance articles using Google Search and LLM",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "article",
+    "enhancement",
+    "llm",
+    "google-search"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^1.34.0",
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.3.1",
+    "openai": "^4.20.1"
+  }
+}
