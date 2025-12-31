@@ -9,7 +9,7 @@ const HomePage = ({ onGetStarted }) => {
             <span className="gradient-text">BeyondChats</span> Article Manager
           </h1>
           <p className="home-subtitle">
-            Intelligent Article Management with AI-Powered Enhancement
+            Automated web scraping, AI-powered content enhancement using Google Gemini, and version control for article management.
           </p>
           <button className="btn-get-started" onClick={onGetStarted}>
             Get Started
@@ -35,9 +35,8 @@ const HomePage = ({ onGetStarted }) => {
               </div>
               <h3>Article Scraping</h3>
               <p>
-                Automatically scrape and collect articles from BeyondChats blog. 
-                Choose how many articles you want (up to 10) and watch them get imported 
-                with real-time progress tracking.
+                Automated web scraping from BeyondChats blog using Cheerio. Batch processing 
+                supports 1-10 articles with real-time progress tracking. Processing time: 120-180 seconds minimum per batch.
               </p>
             </div>
 
@@ -51,9 +50,9 @@ const HomePage = ({ onGetStarted }) => {
               </div>
               <h3>AI Enhancement</h3>
               <p>
-                Enhance your articles using Google Search and AI (Gemini). The system 
-                finds similar high-quality articles, analyzes them, and improves your 
-                content to match top-ranking standards.
+                Content enhancement via SerpAPI/Google Search and Google Gemini 2.5 Flash. 
+                Extracts reference articles, performs semantic analysis, and generates 
+                enhanced versions with citations.
               </p>
             </div>
 
@@ -68,9 +67,8 @@ const HomePage = ({ onGetStarted }) => {
               </div>
               <h3>Version Management</h3>
               <p>
-                Compare original and enhanced versions side-by-side. Track all 
-                improvements, view reference articles used, and see citations added 
-                to your content.
+                MongoDB-based version control with side-by-side comparison. Tracks 
+                reference articles, citations, and enhancement metadata for audit trails.
               </p>
             </div>
           </div>
@@ -86,9 +84,9 @@ const HomePage = ({ onGetStarted }) => {
               <div className="step-content">
                 <h3>Scrape Articles</h3>
                 <p>
-                  Click "Scrape Articles" and choose how many articles you want to import 
-                  (1-10). The system will fetch the oldest articles from BeyondChats blog 
-                  and save them to your database.
+                  Select article count (1-10) and initiate scraping. The system fetches 
+                  oldest articles from BeyondChats blog, extracts content via Cheerio, 
+                  and stores in MongoDB. Processing time: 120-180 seconds minimum.
                 </p>
               </div>
             </div>
