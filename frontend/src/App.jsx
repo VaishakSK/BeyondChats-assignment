@@ -3,15 +3,19 @@ import { laravelArticleService, nodeArticleService } from './services/apiService
 import ArticleList from './components/ArticleList';
 import ArticleModal from './components/ArticleModal';
 import EnhancementPanel from './components/EnhancementPanel';
+import ScrapingPanel from './components/ScrapingPanel';
+import HomePage from './components/HomePage';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import './App.css';
 
 function App() {
   const [activeTab, setActiveTab] = useState('phase2'); // Default to Phase 2 - Phase 1 (Laravel) is hidden
-  const [laravelArticles, setLaravelArticles] = useState([]);
+  const [_laravelArticles, setLaravelArticles] = useState([]);
   const [nodeArticles, setNodeArticles] = useState([]);
   const [loading, setLoading] = useState({ phase1: false, phase2: false });
   const [error, setError] = useState({ phase1: null, phase2: null });
-  const [laravelPagination, setLaravelPagination] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
+  const [_laravelPagination, setLaravelPagination] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
   const [currentLaravelPage, setCurrentLaravelPage] = useState(1);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [articleVersions, setArticleVersions] = useState(null);
@@ -21,9 +25,14 @@ function App() {
   const [currentEnhancingArticle, setCurrentEnhancingArticle] = useState(null);
   const [enhancementSteps, setEnhancementSteps] = useState([]);
   const [enhancementProgressInterval, setEnhancementProgressInterval] = useState(null);
+  const [scrapingCount, setScrapingCount] = useState('5');
+  const [scrapingActive, setScrapingActive] = useState(false);
+  const [scrapingProgress, setScrapingProgress] = useState(null);
+  const [scrapingProgressInterval, setScrapingProgressInterval] = useState(null);
+  const [showHomePage, setShowHomePage] = useState(true);
 
   // Fetch Laravel articles (Phase 1) with pagination
-  const fetchLaravelArticles = async (page = currentLaravelPage) => {
+  const _fetchLaravelArticles = async (page = currentLaravelPage) => {
     setLoading(prev => ({ ...prev, phase1: true }));
     setError(prev => ({ ...prev, phase1: null }));
     try {
@@ -70,12 +79,100 @@ function App() {
 
   // Scrape articles from BeyondChats
   const handleScrape = async () => {
+    // Parse the input value
+    const inputValue = parseInt(scrapingCount);
+    
+    // Validate the input
+    if (isNaN(inputValue) || inputValue < 1) {
+      alert('Please enter a valid number greater than 0.');
+      return;
+    }
+    
+    if (inputValue > 10) {
+      alert('Error: Maximum 10 articles can be scraped at once. Please enter a number between 1 and 10.');
+      return;
+    }
+    
+    const count = inputValue;
     setScraping(true);
+    setScrapingActive(true);
+    
+    // Initialize progress
+    const initialProgress = {
+      status: 'in-progress',
+      total: count,
+      completed: 0,
+      current: 'Starting...',
+      articles: [],
+      startedAt: new Date(),
+      completedAt: null,
+      error: null
+    };
+    setScrapingProgress(initialProgress);
+    
     try {
-      await nodeArticleService.scrapeArticles();
-      await fetchNodeArticles(); // Refresh the list
-      alert('Articles scraped successfully!');
+      const response = await nodeArticleService.scrapeArticles(count);
+      const progressId = response.progressId;
+      
+      if (progressId) {
+        // Start polling for progress
+        const pollProgress = async () => {
+          try {
+            const progressResponse = await nodeArticleService.getScrapingProgress(progressId);
+            
+            if (progressResponse.success && progressResponse.data) {
+              const progress = progressResponse.data;
+              setScrapingProgress(progress);
+              
+              // Check if scraping is completed
+              if (progress.status === 'completed') {
+                // Clear polling interval
+                if (scrapingProgressInterval) {
+                  clearInterval(scrapingProgressInterval);
+                  setScrapingProgressInterval(null);
+                }
+                
+                // Don't auto-refresh - user must click refresh button
+                // Reset after a delay
+                setTimeout(() => {
+                  setScrapingActive(false);
+                  setScrapingProgress(null);
+                }, 3000);
+              } else if (progress.status === 'error') {
+                // Clear polling interval on error
+                if (scrapingProgressInterval) {
+                  clearInterval(scrapingProgressInterval);
+                  setScrapingProgressInterval(null);
+                }
+                
+                // Keep panel open to show error
+              }
+            }
+          } catch (err) {
+            console.error('Error polling scraping progress:', err);
+          }
+        };
+        
+        // Poll every 2 seconds
+        const progressInterval = setInterval(pollProgress, 2000);
+        setScrapingProgressInterval(progressInterval);
+        
+        // Initial poll
+        pollProgress();
+      } else {
+        // Fallback: no progress tracking
+        // Don't auto-refresh - user must click refresh button
+        setScrapingActive(false);
+        setScrapingProgress(null);
+        alert('Articles scraped successfully! Please click Refresh to see the new articles.');
+      }
     } catch (err) {
+      if (scrapingProgressInterval) {
+        clearInterval(scrapingProgressInterval);
+        setScrapingProgressInterval(null);
+      }
+      setScrapingActive(false);
+      setScrapingProgress(null);
       alert('Error scraping articles: ' + (err.message || 'Unknown error'));
     } finally {
       setScraping(false);
@@ -85,11 +182,41 @@ function App() {
   // View article versions
   const handleViewVersions = async (articleId) => {
     try {
-      const response = await nodeArticleService.getArticleVersions(articleId);
-      setArticleVersions(response.data);
-      setSelectedArticle(null);
+      // Use getArticleWithVersions to get both original and enhanced versions
+      const response = await nodeArticleService.getArticleWithVersions(articleId);
+      if (response.success && response.data) {
+        setArticleVersions({
+          original: response.data.original,
+          enhanced: response.data.enhanced,
+          hasEnhanced: response.data.hasEnhanced
+        });
+        setSelectedArticle(null);
+      } else {
+        // Fallback to original article if no enhanced version
+        const article = nodeArticles.find(a => (a._id || a.id) === articleId);
+        if (article) {
+          setArticleVersions({
+            original: article,
+            enhanced: null,
+            hasEnhanced: false
+          });
+          setSelectedArticle(null);
+        }
+      }
     } catch (err) {
-      alert('Error fetching article versions: ' + (err.message || 'Unknown error'));
+      console.error('Error fetching article versions:', err);
+      // Fallback: show original article
+      const article = nodeArticles.find(a => (a._id || a.id) === articleId);
+      if (article) {
+        setArticleVersions({
+          original: article,
+          enhanced: null,
+          hasEnhanced: false
+        });
+        setSelectedArticle(null);
+      } else {
+        alert('Error fetching article versions: ' + (err.message || 'Unknown error'));
+      }
     }
   };
 
@@ -151,6 +278,33 @@ function App() {
       alert('Article deleted successfully!');
     } catch (err) {
       alert('Error deleting article: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  // Delete all articles
+  const handleDeleteAll = async () => {
+    const articleCount = nodeArticles.length;
+    if (articleCount === 0) {
+      alert('No articles to delete.');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete ALL ${articleCount} article(s)?\n\nThis action cannot be undone and will also delete all enhanced versions.`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    // Double confirmation for safety
+    if (!window.confirm('This is your last chance. Are you absolutely sure you want to delete ALL articles?')) {
+      return;
+    }
+
+    try {
+      const response = await nodeArticleService.deleteAllArticles();
+      await fetchNodeArticles();
+      alert(`Successfully deleted ${response.deletedArticles || articleCount} article(s) and ${response.deletedEnhanced || 0} enhanced version(s).`);
+    } catch (err) {
+      alert('Error deleting articles: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -237,7 +391,7 @@ function App() {
                       });
                       break; // Success, exit retry loop
                     }
-                  } catch (err) {
+                  } catch {
                     // If not found, wait and retry
                     if (i < retries - 1) {
                       await new Promise(resolve => setTimeout(resolve, delay));
@@ -323,33 +477,48 @@ function App() {
   // Load articles when tab changes
   useEffect(() => {
     // Phase 1 (Laravel) is hidden - always load Phase 2 articles
-    // if (activeTab === 'phase1') {
-    //   fetchLaravelArticles(1);
-    // } else {
-      fetchNodeArticles();
-    // }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchNodeArticles();
   }, [activeTab]);
 
-  // Cleanup enhancement interval on unmount
+  // Close scraping panel
+  const handleCloseScrapingPanel = () => {
+    if (scrapingProgress?.status === 'in-progress') {
+      if (!window.confirm('Scraping is still in progress. Are you sure you want to close the panel? The scraping will continue in the background.')) {
+        return;
+      }
+    }
+    setScrapingActive(false);
+    setScrapingProgress(null);
+    if (scrapingProgressInterval) {
+      clearInterval(scrapingProgressInterval);
+      setScrapingProgressInterval(null);
+    }
+  };
+
+  // Cleanup intervals on unmount
   useEffect(() => {
     return () => {
       if (enhancementProgressInterval) {
         clearInterval(enhancementProgressInterval);
       }
+      if (scrapingProgressInterval) {
+        clearInterval(scrapingProgressInterval);
+      }
     };
-  }, [enhancementProgressInterval]);
+  }, [enhancementProgressInterval, scrapingProgressInterval]);
+
+  if (showHomePage) {
+    return (
+      <div className="app">
+        <HomePage onGetStarted={() => setShowHomePage(false)} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="app">
-      <header className="app-header">
-        <div className="container">
-          <h1 className="app-title">
-            <span className="gradient-text">BeyondChats</span> Articles
-          </h1>
-          <p className="app-subtitle">Article Management System</p>
-        </div>
-      </header>
+      <Header onHomeClick={() => setShowHomePage(true)} showHomeButton={true} />
 
       <main className="app-main">
         <div className="container">
@@ -372,7 +541,7 @@ function App() {
           </div>
 
           {/* Phase 1 action bar - hidden, code kept for future use */}
-          {activeTab === 'phase1' && false && (
+          {/* {activeTab === 'phase1' && (
             <div className="action-bar">
               <button
                 className="btn-scrape"
@@ -419,31 +588,65 @@ function App() {
                 Refresh
               </button>
             </div>
-          )}
+          )} */}
 
           {activeTab === 'phase2' && (
             <div className="action-bar">
-              <button
-                className="btn-scrape"
-                onClick={handleScrape}
-                disabled={scraping}
-              >
-                {scraping ? (
-                  <>
-                    <div className="spinner-small"></div>
-                    Scraping...
-                  </>
-                ) : (
-                  <>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="7 10 12 15 17 10"></polyline>
-                      <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Scrape BeyondChats Articles
-                  </>
-                )}
-              </button>
+              <div className="scrape-controls">
+                <label htmlFor="scrape-count" style={{ marginRight: '10px', fontWeight: '500' }}>
+                  Number of articles (max 10):
+                </label>
+                <input
+                  id="scrape-count"
+                  type="number"
+                  min="1"
+                  value={scrapingCount}
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    // Allow empty string for clearing, or valid numbers
+                    if (inputValue === '' || (!isNaN(parseInt(inputValue)) && parseInt(inputValue) >= 0)) {
+                      setScrapingCount(inputValue === '' ? '' : inputValue);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Ensure minimum value of 1 when field loses focus
+                    const val = parseInt(e.target.value);
+                    if (isNaN(val) || val < 1) {
+                      setScrapingCount(5);
+                    }
+                  }}
+                  disabled={scraping}
+                  placeholder="5"
+                  style={{
+                    width: '80px',
+                    padding: '8px',
+                    marginRight: '10px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd'
+                  }}
+                />
+                <button
+                  className="btn-scrape"
+                  onClick={handleScrape}
+                  disabled={scraping}
+                >
+                  {scraping ? (
+                    <>
+                      <div className="spinner-small"></div>
+                      Scraping...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      Scrape Articles
+                    </>
+                  )}
+                </button>
+              </div>
               <button
                 className="btn-refresh"
                 onClick={fetchNodeArticles}
@@ -456,12 +659,26 @@ function App() {
                 </svg>
                 Refresh
               </button>
+              <button
+                className="btn-delete-all"
+                onClick={handleDeleteAll}
+                disabled={loading.phase2 || nodeArticles.length === 0}
+                title={nodeArticles.length === 0 ? 'No articles to delete' : 'Delete all articles'}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                Delete All
+              </button>
             </div>
           )}
 
-          <div className={`content-area ${enhancementActive ? 'with-enhancement-panel' : ''}`}>
+          <div className={`content-area ${enhancementActive ? 'with-enhancement-panel' : ''} ${scrapingActive ? 'with-scraping-panel' : ''}`}>
             {/* Phase 1 content - hidden, code kept for future use */}
-            {activeTab === 'phase1' && false ? (
+            {/* {activeTab === 'phase1' ? (
               <ArticleList
                 articles={laravelArticles}
                 loading={loading.phase1}
@@ -474,7 +691,7 @@ function App() {
                 pagination={laravelPagination}
                 onPageChange={(page) => fetchLaravelArticles(page)}
               />
-            ) : (
+            ) : ( */}
               <ArticleList
                 articles={nodeArticles}
                 loading={loading.phase2}
@@ -488,7 +705,7 @@ function App() {
                 enhancing={enhancing}
                 isEnhancementActive={enhancementActive}
               />
-            )}
+            {/* )} */}
           </div>
         </div>
       </main>
@@ -512,8 +729,15 @@ function App() {
         onClose={handleCloseEnhancementPanel}
       />
 
+      {/* Scraping Panel */}
+      <ScrapingPanel
+        isActive={scrapingActive}
+        progress={scrapingProgress}
+        onClose={handleCloseScrapingPanel}
+      />
+
       {/* Debug info - remove in production */}
-      {process.env.NODE_ENV === 'development' && (
+      {import.meta.env.DEV && (
         <div style={{ 
           position: 'fixed', 
           bottom: '10px', 
@@ -532,6 +756,7 @@ function App() {
         </div>
       )}
 
+      <Footer />
     </div>
   );
 }

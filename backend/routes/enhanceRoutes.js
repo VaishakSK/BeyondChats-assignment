@@ -82,12 +82,18 @@ router.post('/:id', async (req, res) => {
     enhancementProgress.set(articleId, progress);
     
     // Run enhancement script as separate process
-    const scriptPath = path.join(task3Path, 'index.js');
+    // Use relative path from backend directory so node_modules can be found
+    const backendPath = path.resolve(__dirname, '..');
+    const scriptPath = path.relative(backendPath, path.join(task3Path, 'index.js'));
+    
+    // Ensure environment variables are loaded and passed to child process
+    // The .env file is already loaded in server.js via dotenv.config()
+    // Pass all environment variables (including GEMINI_API_KEY) to the child process
     const child = spawn('node', [scriptPath, articleId], {
-      cwd: task3Path,
+      cwd: backendPath, // Run from backend directory so node_modules can be found
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: false,
-      env: { ...process.env, NODE_ENV: process.env.NODE_ENV || 'development' }
+      env: process.env // Pass all environment variables including GEMINI_API_KEY from .env
     });
 
     let stdout = '';

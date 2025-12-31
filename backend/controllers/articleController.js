@@ -1,4 +1,5 @@
 import Article from '../models/Article.js';
+import EnhancedArticle from '../models/EnhancedArticle.js';
 
 // Get all articles
 export const getAllArticles = async (req, res) => {
@@ -153,7 +154,8 @@ export const updateArticle = async (req, res) => {
 // Delete article
 export const deleteArticle = async (req, res) => {
   try {
-    const article = await Article.findByIdAndDelete(req.params.id);
+    const articleId = req.params.id;
+    const article = await Article.findById(articleId);
     
     if (!article) {
       return res.status(404).json({
@@ -162,9 +164,52 @@ export const deleteArticle = async (req, res) => {
       });
     }
 
+    // Delete all enhanced articles associated with this article
+    const deleteResult = await EnhancedArticle.deleteMany({ 
+      originalArticleId: articleId 
+    });
+    
+    console.log(`Deleted ${deleteResult.deletedCount} enhanced article(s) for article ${articleId}`);
+
+    // Delete the original article
+    await Article.findByIdAndDelete(articleId);
+
     res.json({
       success: true,
-      message: 'Article deleted successfully'
+      message: `Article and ${deleteResult.deletedCount} enhanced version(s) deleted successfully`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// Delete all articles
+export const deleteAllArticles = async (req, res) => {
+  try {
+    // Get all article IDs first
+    const articles = await Article.find({}, '_id');
+    const articleIds = articles.map(article => article._id);
+
+    // Delete all enhanced articles associated with any of these articles
+    const enhancedDeleteResult = await EnhancedArticle.deleteMany({ 
+      originalArticleId: { $in: articleIds }
+    });
+    
+    console.log(`Deleted ${enhancedDeleteResult.deletedCount} enhanced article(s)`);
+
+    // Delete all articles
+    const articleDeleteResult = await Article.deleteMany({});
+    
+    console.log(`Deleted ${articleDeleteResult.deletedCount} article(s)`);
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${articleDeleteResult.deletedCount} article(s) and ${enhancedDeleteResult.deletedCount} enhanced version(s)`,
+      deletedArticles: articleDeleteResult.deletedCount,
+      deletedEnhanced: enhancedDeleteResult.deletedCount
     });
   } catch (error) {
     res.status(500).json({

@@ -11,8 +11,27 @@ import { CitationFormatter } from './utils/citationFormatter.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Try to load .env from backend/task3 first, then fallback to backend/.env
-dotenv.config({ path: path.join(__dirname, '.env') });
-dotenv.config({ path: path.join(__dirname, '../.env') });
+const task3EnvPath = path.resolve(__dirname, '.env');
+const backendEnvPath = path.resolve(__dirname, '../.env');
+
+// Load .env files (later configs override earlier ones)
+// Note: Environment variables from parent process (via process.env) are already available
+// This ensures .env file is loaded even if parent didn't load it
+const task3Result = dotenv.config({ path: task3EnvPath });
+const backendResult = dotenv.config({ path: backendEnvPath });
+
+// Debug: Log if .env was loaded (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  if (backendResult.error && task3Result.error) {
+    console.log('⚠️  Warning: Could not load .env file from either location');
+    console.log(`   Tried: ${task3EnvPath}`);
+    console.log(`   Tried: ${backendEnvPath}`);
+  } else {
+    console.log('✅ Environment variables loaded');
+    console.log(`   SERPAPI_KEY: ${process.env.SERPAPI_KEY ? 'Set ✓' : 'NOT SET ✗'}`);
+    console.log(`   GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? 'Set ✓' : 'NOT SET ✗'}`);
+  }
+}
 
 /**
  * Main function to enhance an article

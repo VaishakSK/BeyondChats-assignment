@@ -174,13 +174,35 @@ export const nodeArticleService = {
     }
   },
 
-  // Scrape articles from BeyondChats
-  scrapeArticles: async () => {
+  // Delete all articles
+  deleteAllArticles: async () => {
     try {
-      const response = await nodeApi.post('/scrape/beyondchats');
+      const response = await nodeApi.delete('/articles/all');
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting all articles:', error);
+      throw error;
+    }
+  },
+
+  // Scrape articles from BeyondChats
+  scrapeArticles: async (count = 5) => {
+    try {
+      const response = await nodeApi.post('/scrape/beyondchats', { count });
       return response.data;
     } catch (error) {
       console.error('Error scraping articles:', error);
+      throw error;
+    }
+  },
+
+  // Get scraping progress
+  getScrapingProgress: async (progressId) => {
+    try {
+      const response = await nodeApi.get(`/scrape/progress/${progressId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching scraping progress:', error);
       throw error;
     }
   },

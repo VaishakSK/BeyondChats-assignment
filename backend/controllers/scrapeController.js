@@ -280,22 +280,47 @@ const extractArticleData = async (articleUrl) => {
   }
 };
 
+// In-memory store for scraping progress
+const scrapingProgress = new Map();
+
 /**
  * Scrape articles from BeyondChats blog
- * Gets the 5 oldest articles from the last page
+ * Gets N oldest articles from the last page (default: 5, max: 10)
  */
 export const scrapeBeyondChats = async (req, res) => {
   try {
+    const { count = 5 } = req.body;
+    const articleCount = Math.min(Math.max(parseInt(count) || 5, 1), 10); // Between 1 and 10
+    
     const baseUrl = 'https://beyondchats.com/blogs/';
     const scrapedArticles = [];
+    const progressId = `scrape_${Date.now()}`;
 
-    console.log('🔍 Finding last page of BeyondChats blog...');
+    // Initialize progress
+    const progress = {
+      id: progressId,
+      status: 'in-progress',
+      total: articleCount,
+      completed: 0,
+      current: 'Finding last page...',
+      articles: [],
+      startedAt: new Date(),
+      completedAt: null,
+      error: null
+    };
+    scrapingProgress.set(progressId, progress);
+
+    console.log(`🔍 Finding last page of BeyondChats blog (scraping ${articleCount} articles)...`);
     
     // Step 1: Find the last page
+    progress.current = 'Finding last page...';
+    scrapingProgress.set(progressId, progress);
     const lastPageUrl = await findLastPage(baseUrl);
     console.log(`📄 Last page URL: ${lastPageUrl}`);
 
     // Step 2: Fetch the last page
+    progress.current = 'Fetching articles list...';
+    scrapingProgress.set(progressId, progress);
     const response = await axios.get(lastPageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -348,16 +373,28 @@ export const scrapeBeyondChats = async (req, res) => {
     console.log(`📰 Found ${articleLinks.length} article links on last page`);
 
     if (articleLinks.length === 0) {
+      progress.status = 'error';
+      progress.error = 'No articles found on the last page. The website structure may have changed.';
+      progress.completedAt = new Date();
+      scrapingProgress.set(progressId, progress);
+      
       return res.status(404).json({
         success: false,
-        error: 'No articles found on the last page. The website structure may have changed.'
+        error: 'No articles found on the last page. The website structure may have changed.',
+        progressId
       });
     }
 
     // Step 4: Extract article data and dates
+    progress.current = 'Extracting article data...';
+    scrapingProgress.set(progressId, progress);
     const articlesWithDates = [];
     
-    for (const link of articleLinks) {
+    for (let i = 0; i < articleLinks.length; i++) {
+      const link = articleLinks[i];
+      progress.current = `Extracting article ${i + 1}/${articleLinks.length}...`;
+      scrapingProgress.set(progressId, progress);
+      
       const articleData = await extractArticleData(link);
       if (articleData) {
         articlesWithDates.push(articleData);
@@ -366,16 +403,25 @@ export const scrapeBeyondChats = async (req, res) => {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    // Step 5: Sort by published date (oldest first) and get 5 oldest
+    // Step 5: Sort by published date (oldest first) and get N oldest
     articlesWithDates.sort((a, b) => {
       return new Date(a.publishedDate) - new Date(b.publishedDate);
     });
 
-    const oldestArticles = articlesWithDates.slice(0, 5);
+    const oldestArticles = articlesWithDates.slice(0, articleCount);
     console.log(`📚 Found ${oldestArticles.length} oldest articles`);
 
     // Step 6: Store articles in database
-    for (const articleData of oldestArticles) {
+    progress.current = 'Saving articles to database...';
+    progress.total = oldestArticles.length;
+    scrapingProgress.set(progressId, progress);
+    
+    for (let i = 0; i < oldestArticles.length; i++) {
+      const articleData = oldestArticles[i];
+      progress.current = `Saving article ${i + 1}/${oldestArticles.length}: ${articleData.title.substring(0, 50)}...`;
+      progress.completed = i;
+      scrapingProgress.set(progressId, progress);
+      
       try {
         // Check if article already exists
         const existingArticle = await Article.findOne({ sourceUrl: articleData.sourceUrl });
@@ -384,32 +430,85 @@ export const scrapeBeyondChats = async (req, res) => {
           const article = new Article(articleData);
           await article.save();
           scrapedArticles.push(article);
+          progress.articles.push({ title: article.title, status: 'saved' });
           console.log(`✅ Saved: ${article.title}`);
         } else {
           // Update existing article if needed
           Object.assign(existingArticle, articleData);
           await existingArticle.save();
           scrapedArticles.push(existingArticle);
+          progress.articles.push({ title: existingArticle.title, status: 'updated' });
           console.log(`♻️  Updated: ${existingArticle.title}`);
         }
       } catch (error) {
         console.error(`❌ Error saving article ${articleData.title}:`, error.message);
+        progress.articles.push({ title: articleData.title, status: 'error', error: error.message });
       }
     }
+
+    // Mark as completed
+    progress.status = 'completed';
+    progress.completed = oldestArticles.length;
+    progress.current = 'Completed';
+    progress.completedAt = new Date();
+    scrapingProgress.set(progressId, progress);
+
+    // Clean up after 1 hour
+    setTimeout(() => {
+      scrapingProgress.delete(progressId);
+    }, 3600000);
 
     res.json({
       success: true,
       message: `Successfully scraped and stored ${scrapedArticles.length} oldest articles from the last page`,
       data: scrapedArticles,
       totalFound: articlesWithDates.length,
-      oldestCount: oldestArticles.length
+      oldestCount: oldestArticles.length,
+      progressId
     });
   } catch (error) {
     console.error('❌ Scraping error:', error);
+    const progressId = `scrape_${Date.now()}`;
+    const progress = scrapingProgress.get(progressId);
+    if (progress) {
+      progress.status = 'error';
+      progress.error = error.message || 'Failed to scrape articles';
+      progress.completedAt = new Date();
+      scrapingProgress.set(progressId, progress);
+    }
+    
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to scrape articles',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      progressId
+    });
+  }
+};
+
+/**
+ * Get scraping progress
+ */
+export const getScrapingProgress = async (req, res) => {
+  try {
+    const { progressId } = req.params;
+    const progress = scrapingProgress.get(progressId);
+    
+    if (!progress) {
+      return res.status(404).json({
+        success: false,
+        error: 'Scraping progress not found. The scraping may not have started or has been cleaned up.'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: progress
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get scraping progress'
     });
   }
 };
