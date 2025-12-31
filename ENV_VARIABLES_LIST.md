@@ -21,7 +21,7 @@ NODE_ENV=development
 
 ---
 
-## Task 3 (`task3/.env`)
+## Task 3 (`backend/task3/.env`)
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -36,7 +36,7 @@ NODE_ENV=development
 
 **Note**: Either `SERPAPI_KEY` OR (`GOOGLE_API_KEY` + `GOOGLE_CSE_ID`) is required.
 
-### Example `task3/.env`:
+### Example `backend/task3/.env`:
 ```env
 API_BASE_URL=http://localhost:5000/api
 SERPAPI_KEY=your_serpapi_key_here
@@ -114,7 +114,7 @@ VITE_LARAVEL_API_URL=http://localhost:8000/api
 MONGODB_URI=your_mongodb_connection_string
 ```
 
-**`task3/.env`**:
+**`backend/task3/.env`**:
 ```env
 SERPAPI_KEY=your_serpapi_key
 GEMINI_API_KEY=your_gemini_api_key
@@ -132,7 +132,7 @@ That's it! Everything else has defaults.
   - `CORS_ORIGIN` - CORS configuration
   - `NODE_ENV` - Environment detection
 
-- **Task 3** (`task3/services/`):
+- **Task 3** (`backend/task3/services/`):
   - `SERPAPI_KEY`, `GOOGLE_API_KEY`, `GOOGLE_CSE_ID` - `googleSearch.js`
   - `GEMINI_API_KEY`, `GEMINI_MODEL` - `llmService.js`
   - `API_BASE_URL` - `apiService.js`

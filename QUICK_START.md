@@ -16,7 +16,7 @@ cd ../frontend
 npm install
 
 # Task 3 (Article Enhancement)
-cd ../task3
+cd ../backend/task3
 npm install
 ```
 

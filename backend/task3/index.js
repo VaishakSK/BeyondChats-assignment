@@ -1,8 +1,18 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { GoogleSearchService } from './services/googleSearch.js';
 import { ArticleScraper } from './services/articleScraper.js';
 import { LLMService } from './services/llmService.js';
 import { APIService } from './services/apiService.js';
 import { CitationFormatter } from './utils/citationFormatter.js';
+
+// Load environment variables from backend's .env file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Try to load .env from backend/task3 first, then fallback to backend/.env
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 /**
  * Main function to enhance an article

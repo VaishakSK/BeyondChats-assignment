@@ -82,7 +82,8 @@ beyondChats-assignment/
 │   ├── server.js               # Express server
 │   └── package.json
 │
-├── task3/                       # Article enhancement system
+├── backend/
+│   ├── task3/                   # Article enhancement system
 │   ├── services/
 │   │   ├── googleSearch.js     # Google Search integration
 │   │   ├── articleScraper.js   # Web scraping service
@@ -175,7 +176,7 @@ npm install
 
 4. **Install Task 3 Dependencies**
 ```bash
-cd task3
+cd backend/task3
 npm install
 ```
 
@@ -190,7 +191,7 @@ npm install
    MONGODB_URI=your_mongodb_connection_string
    ```
 
-2. **Task 3** (`task3/.env`):
+2. **Task 3** (`backend/task3/.env`):
    ```env
    API_BASE_URL=http://localhost:5000/api
    SERPAPI_KEY=your_serpapi_key
@@ -199,7 +200,7 @@ npm install
    ```
 
 **Setup Steps**:
-1. Copy `.env.example` files to `.env` in each directory (`backend/`, `task3/`)
+1. Copy `.env.example` files to `.env` in each directory (`backend/`, `backend/task3/`)
 2. Fill in your actual API keys and MongoDB connection string
 3. Never commit `.env` files to version control (they're in `.gitignore`)
 

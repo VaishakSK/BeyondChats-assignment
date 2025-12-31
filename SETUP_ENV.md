@@ -22,9 +22,9 @@ MONGODB_URI=your_mongodb_connection_string_here
 - **MongoDB Atlas**: Go to your cluster → Connect → Connect your application → Copy connection string
 - **Local MongoDB**: `mongodb://localhost:27017/your_database_name`
 
-### 2. Task 3 (`task3/.env`)
+### 2. Task 3 (`backend/task3/.env`)
 
-Create `task3/.env` with the following:
+Create `backend/task3/.env` with the following:
 
 ```env
 # API Base URL
@@ -53,7 +53,7 @@ GEMINI_MODEL=gemini-2.5-flash
 1. **Copy example files** (if they exist):
    ```bash
    cp backend/.env.example backend/.env
-   cp task3/.env.example task3/.env
+   cp backend/task3/.env.example backend/task3/.env
    ```
 
 2. **Edit the `.env` files** and add your actual API keys and connection strings

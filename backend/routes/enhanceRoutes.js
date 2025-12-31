@@ -57,7 +57,7 @@ function parseStepFromOutput(output) {
 router.post('/:id', async (req, res) => {
   try {
     const articleId = req.params.id;
-    const task3Path = path.resolve(__dirname, '../../task3');
+    const task3Path = path.resolve(__dirname, '../task3');
     
     console.log(`🚀 API: Starting enhancement for article ${articleId}`);
     

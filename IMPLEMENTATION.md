@@ -100,32 +100,32 @@ User Action → Frontend → Backend API → Task 3 Script
 
 #### Services
 
-**1. GoogleSearchService** (`task3/services/googleSearch.js`)
+**1. GoogleSearchService** (`backend/task3/services/googleSearch.js`)
 - Uses SerpAPI for Google searches
 - Filters results for blog/article links
 - Excludes social media, videos, etc.
 - Returns top 2 relevant articles
 
-**2. ArticleScraper** (`task3/services/articleScraper.js`)
+**2. ArticleScraper** (`backend/task3/services/articleScraper.js`)
 - Enhanced HTTP headers to avoid 403 errors
 - 25+ CSS selectors for content extraction
 - Fallback logic for different website structures
 - Handles relative URLs and HTML cleanup
 - Minimum content validation (100 chars)
 
-**3. LLMService** (`task3/services/llmService.js`)
+**3. LLMService** (`backend/task3/services/llmService.js`)
 - Uses Google Gemini 2.5 Flash
 - Fallback to gemini-1.5-flash if needed
 - Custom prompts for article enhancement
 - Parses AI response (title + content)
 - Extracts plain text from HTML
 
-**4. APIService** (`task3/services/apiService.js`)
+**4. APIService** (`backend/task3/services/apiService.js`)
 - Fetches original articles
 - Creates enhanced articles in database
 - Handles API errors
 
-**5. CitationFormatter** (`task3/utils/citationFormatter.js`)
+**5. CitationFormatter** (`backend/task3/utils/citationFormatter.js`)
 - Formats reference articles as citations
 - HTML and plain text formats
 - Includes title, author, date, URL
